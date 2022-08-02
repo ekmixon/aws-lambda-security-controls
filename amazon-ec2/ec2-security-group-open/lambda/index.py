@@ -34,9 +34,7 @@ def lambda_handler(event, context):
     setup_logging()
     log.info('Got an event!')
     log.info(json.dumps(event, indent=2))
-    cidr_violations = evaluate_control(event)
-
-    if cidr_violations:
+    if cidr_violations := evaluate_control(event):
         log.info("Sending Violation for:"
                  + str(json.dumps(cidr_violations, indent=2)))
         invoke_alert(event, context, cidr_violations)

@@ -32,9 +32,17 @@ def lambda_handler(event, context):
 
     #If kms_key_exists is false and sse_customer_algorithm_exists is true
     if kms_key_exists(event):
-        message = "Violation - S3://" + bucket_name + "/" + key + " is using a KMS Key for Encryption \n"
+        message = (
+            f"Violation - S3://{bucket_name}/{key}"
+            + " is using a KMS Key for Encryption \n"
+        )
+
     if not sse_customer_algorithm_exists(event):
-        message += "Violation - S3://" + bucket_name + "/" + key + " is not using SSE Customer Algorithm for Encryption \n"
+        message += (
+            f"Violation - S3://{bucket_name}/{key}"
+            + " is not using SSE Customer Algorithm for Encryption \n"
+        )
+
     if message:
         log.info('Invoking and Alert.')
         send_violation(message)
@@ -43,15 +51,17 @@ def lambda_handler(event, context):
 
 def kms_key_exists(event):
     """Key exist function - check for KMS Key ID"""
-    if 'x-amz-server-side-encryption-aws-kms-key-id' in event['detail']['responseElements']:
-        return True
-    return False
+    return (
+        'x-amz-server-side-encryption-aws-kms-key-id'
+        in event['detail']['responseElements']
+    )
 
 def sse_customer_algorithm_exists(event):
     """Algorithm function - check for customer algorithm"""
-    if 'x-amz-server-side-encryption-customer-algorithm' in event['detail']['responseElements']:
-        return True
-    return False
+    return (
+        'x-amz-server-side-encryption-customer-algorithm'
+        in event['detail']['responseElements']
+    )
 
 #Function to send SNS Message
 def send_violation(message):

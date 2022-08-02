@@ -48,7 +48,7 @@ def lambda_handler(event, context):
         if event["detail"]["awsRegion"] in Regions:
             print(
                 "No violations found for EC2 Instance(s) being brought up in an invalid region.")
-        elif event["detail"]["awsRegion"] not in Regions:
+        else:
             ec2_invalid_region_instance = []
             if event["detail"]["eventName"] == "ModifyInstanceAttribute":
                 ec2_invalid_region_instance = event["detail"]["requestParameters"]["instanceId"]
@@ -97,7 +97,7 @@ def create_non_compliance_message(ec2_invalid_region_instance, event, context):
     if type(ec2_invalid_region_instance) is list:
         ec2_invalid_region_instance = ''.join(ec2_invalid_region_instance)
     message = "Violation - EC2 Instance(s) created/modified in invalid region!  \n\n"
-    message += 'EC2 Instance(s): ' + ec2_invalid_region_instance + '\n'
+    message += f'EC2 Instance(s): {ec2_invalid_region_instance}' + '\n'
     message += 'Account: ' + event["account"] + "\n"
     message += "Region: " + event["detail"]["awsRegion"] + "\n"
     message += "\n\n"
@@ -128,4 +128,6 @@ def setup_logging():
         log.setLevel(log_levels['ERROR'])
         log.warning('The logging_level environment variable is not set. The log level is set to \
                     ERROR')
-    log.info('Logging setup complete - set to log level ' + str(log.getEffectiveLevel()))
+    log.info(
+        f'Logging setup complete - set to log level {str(log.getEffectiveLevel())}'
+    )

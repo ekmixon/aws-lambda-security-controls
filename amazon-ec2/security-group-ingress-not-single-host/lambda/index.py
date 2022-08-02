@@ -39,26 +39,36 @@ def lambda_handler(event, context):
             cidr_violations = []
             # Check IPV4
             if "items" in security_group_info["ipRanges"]:
-                for ip_range in security_group_info["ipRanges"]["items"]:
-                    if is_netmask_slash_32_or_128(ip_range["cidrIp"]):
-                        cidr_violations.append({
-                            "groupIdentifier": security_group_info["groupIdentifier"],
-                            "ipProtocol": security_group_info["ipProtocol"],
-                            "toPort": security_group_info["toPort"],
-                            "fromPort": security_group_info["fromPort"],
-                            "cidrIp": ip_range["cidrIp"]
-                        })
+                cidr_violations.extend(
+                    {
+                        "groupIdentifier": security_group_info[
+                            "groupIdentifier"
+                        ],
+                        "ipProtocol": security_group_info["ipProtocol"],
+                        "toPort": security_group_info["toPort"],
+                        "fromPort": security_group_info["fromPort"],
+                        "cidrIp": ip_range["cidrIp"],
+                    }
+                    for ip_range in security_group_info["ipRanges"]["items"]
+                    if is_netmask_slash_32_or_128(ip_range["cidrIp"])
+                )
+
             # Check IPv6
             if "items" in security_group_info["ipv6Ranges"]:
-                for ip_range in security_group_info["ipv6Ranges"]["items"]:
-                    if is_netmask_slash_32_or_128(ip_range["cidrIpv6"]):
-                        cidr_violations.append({
-                            "groupIdentifier": security_group_info["groupIdentifier"],
-                            "ipProtocol": security_group_info["ipProtocol"],
-                            "toPort": security_group_info["toPort"],
-                            "fromPort": security_group_info["fromPort"],
-                            "cidrIp": ip_range["cidrIpv6"]
-                        })
+                cidr_violations.extend(
+                    {
+                        "groupIdentifier": security_group_info[
+                            "groupIdentifier"
+                        ],
+                        "ipProtocol": security_group_info["ipProtocol"],
+                        "toPort": security_group_info["toPort"],
+                        "fromPort": security_group_info["fromPort"],
+                        "cidrIp": ip_range["cidrIpv6"],
+                    }
+                    for ip_range in security_group_info["ipv6Ranges"]["items"]
+                    if is_netmask_slash_32_or_128(ip_range["cidrIpv6"])
+                )
+
             if cidr_violations:
                 subject = "Violation - Security group does not meet the Cidr policy!"
                 logging.warning('CIDR Violation')
@@ -79,22 +89,24 @@ def lambda_handler(event, context):
 
 def get_security_group_ingress_info(event):
     security_group_identifier = ""
-    security_group_ingress_info = []
     if "groupId" in event["detail"]["requestParameters"]:
         security_group_identifier = event["detail"]["requestParameters"]["groupId"]
     elif "groupName" in event["detail"]["requestParameters"]:
         security_group_identifier = event["detail"]["requestParameters"]["groupName"]
-    for item in event["detail"]["requestParameters"]["ipPermissions"]["items"]:
-        if "ipRanges" in item:
-            security_group_ingress_info.append({
-                "groupIdentifier": security_group_identifier,
-                "ipProtocol": item["ipProtocol"],
-                "toPort": str(item["toPort"]),
-                "fromPort": str(item["fromPort"]),
-                "ipRanges": item["ipRanges"],
-                "ipv6Ranges": item["ipv6Ranges"]
-            })
-    return security_group_ingress_info
+    return [
+        {
+            "groupIdentifier": security_group_identifier,
+            "ipProtocol": item["ipProtocol"],
+            "toPort": str(item["toPort"]),
+            "fromPort": str(item["fromPort"]),
+            "ipRanges": item["ipRanges"],
+            "ipv6Ranges": item["ipv6Ranges"],
+        }
+        for item in event["detail"]["requestParameters"]["ipPermissions"][
+            "items"
+        ]
+        if "ipRanges" in item
+    ]
 
 # Checks to see if the netmask of a cidr block is /0
 
@@ -103,11 +115,7 @@ def is_netmask_slash_32_or_128(cidr_block):
     cidr_netmask_start = cidr_block.find("/")
     cidr_netmask_end = cidr_netmask_start - len(cidr_block)
     netmask = cidr_block[cidr_netmask_end:]
-    if netmask == "/32":
-        return True
-    elif netmask == "/128":
-        return True
-    return False
+    return netmask in ["/32", "/128"]
 
 # Send SNS Notification
 

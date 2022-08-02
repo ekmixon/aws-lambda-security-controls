@@ -51,9 +51,8 @@ def lambda_handler(event, context):
     try:
         instanceprofile = find_rolename(event)
     except Exception as e:
-        log.info("Exception thrown: %s" % str(e))
+        log.info(f"Exception thrown: {str(e)}")
         instanceprofile = ''
-        pass
     if instanceprofile:
         check_profile_policy(event, ec2instancename, instanceprofile,
                              violations)
@@ -114,18 +113,88 @@ def check_profile_policy(event, ec2instancename, instanceprofile, violations):
             # log.info (item["Resource"])
             # log.info (item["Action"])
             if item["Resource"] == ['*']:
-                violations.append("EC2 IAM Profile: " + instanceprofile + "\n"
-                                  + "Event: " + event["detail"]["eventName"]
-                                  + "\n" + "EC2 Instance:" + ec2instancename
-                                  + "\n" + "Inline Policy: " + names + "\n"
-                                  + "Violation: WildCard Resource" + "\n")
+                violations.append(
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                f"EC2 IAM Profile: {instanceprofile}"
+                                                                + "\n"
+                                                                + "Event: "
+                                                            )
+                                                            + event["detail"][
+                                                                "eventName"
+                                                            ]
+                                                        )
+                                                        + "\n"
+                                                    )
+                                                    + "EC2 Instance:"
+                                                )
+                                                + ec2instancename
+                                            )
+                                            + "\n"
+                                        )
+                                        + "Inline Policy: "
+                                    )
+                                    + names
+                                )
+                                + "\n"
+                            )
+                            + "Violation: WildCard Resource"
+                        )
+                        + "\n"
+                    )
+                )
+
             if item["Action"] == ['*']:
-                violations.append("EC2 IAM Profile: " + instanceprofile + "\n"
-                                  + "Event: " + event["detail"]["eventName"]
-                                  + "\n" + "EC2 Instance:" + ec2instancename
-                                  + "\n" + "Inline Policy: " + names + "\n"
-                                  + "Violation: WildCard Action" + "\n")
-            # log.info(violations)
+                violations.append(
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                f"EC2 IAM Profile: {instanceprofile}"
+                                                                + "\n"
+                                                                + "Event: "
+                                                            )
+                                                            + event["detail"][
+                                                                "eventName"
+                                                            ]
+                                                        )
+                                                        + "\n"
+                                                    )
+                                                    + "EC2 Instance:"
+                                                )
+                                                + ec2instancename
+                                            )
+                                            + "\n"
+                                        )
+                                        + "Inline Policy: "
+                                    )
+                                    + names
+                                )
+                                + "\n"
+                            )
+                            + "Violation: WildCard Action"
+                        )
+                        + "\n"
+                    )
+                )
+
+                    # log.info(violations)
     for policy in role2["AttachedPolicies"]:
         # policy_list.append(policy["PolicyName"])
         policyversion = client.get_policy(PolicyArn=policy["PolicyArn"])
@@ -136,19 +205,87 @@ def check_profile_policy(event, ec2instancename, instanceprofile, violations):
         log.info(policy_detail)
         for item1 in policy_detail["PolicyVersion"]["Document"]["Statement"]:
             if item1["Resource"] == "*":
-                violations.append("EC2 IAM Profile: " + instanceprofile + "\n"
-                                  + "Event: " + event["detail"]["eventName"]
-                                  + "\n" + "EC2 Instance:" + ec2instancename
-                                  + "\n" + "Managed Policy: "
-                                  + policy["PolicyName"] + "\n"
-                                  + "Violation: WildCard Resource" + "\n")
+                violations.append(
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                f"EC2 IAM Profile: {instanceprofile}"
+                                                                + "\n"
+                                                                + "Event: "
+                                                            )
+                                                            + event["detail"][
+                                                                "eventName"
+                                                            ]
+                                                        )
+                                                        + "\n"
+                                                    )
+                                                    + "EC2 Instance:"
+                                                )
+                                                + ec2instancename
+                                            )
+                                            + "\n"
+                                        )
+                                        + "Managed Policy: "
+                                    )
+                                    + policy["PolicyName"]
+                                )
+                                + "\n"
+                            )
+                            + "Violation: WildCard Resource"
+                        )
+                        + "\n"
+                    )
+                )
+
             if item1["Action"] == "*":
-                violations.append("EC2 IAM Profile: " + instanceprofile + "\n"
-                                  + "Event: " + event["detail"]["eventName"]
-                                  + "\n" + "EC2 Instance:" + ec2instancename
-                                  + "\n" + "Managed Policy: "
-                                  + policy["PolicyName"] + "\n"
-                                  + "Violation: WildCard Action" + "\n")
+                violations.append(
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                f"EC2 IAM Profile: {instanceprofile}"
+                                                                + "\n"
+                                                                + "Event: "
+                                                            )
+                                                            + event["detail"][
+                                                                "eventName"
+                                                            ]
+                                                        )
+                                                        + "\n"
+                                                    )
+                                                    + "EC2 Instance:"
+                                                )
+                                                + ec2instancename
+                                            )
+                                            + "\n"
+                                        )
+                                        + "Managed Policy: "
+                                    )
+                                    + policy["PolicyName"]
+                                )
+                                + "\n"
+                            )
+                            + "Violation: WildCard Action"
+                        )
+                        + "\n"
+                    )
+                )
+
     return violations
 
 
@@ -205,4 +342,6 @@ def setup_logging():
                         ERROR.  The log level is set to ERROR")
     else:
         log.setLevel(log_levels['ERROR'])
-    log.info('Logging setup complete - set to log level ' + str(log.getEffectiveLevel()))
+    log.info(
+        f'Logging setup complete - set to log level {str(log.getEffectiveLevel())}'
+    )

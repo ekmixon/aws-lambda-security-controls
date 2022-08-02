@@ -98,7 +98,7 @@ def send_violation(message, subject):
 def create_non_compliance_message(ami_id, event, context):
     """Function will structure the outgoing AWS SNS notification format."""
     message = "Violation - EC2 AMI was made Public!  \n\n"
-    message += 'AMI ID: ' + ami_id + '\n'
+    message += f'AMI ID: {ami_id}' + '\n'
     message += 'Account: ' + event["account"] + "\n"
     message += "Region: " + event["detail"]["awsRegion"] + "\n"
     message += "AMI will be automatically reverted to Private. \n"

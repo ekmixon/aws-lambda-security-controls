@@ -70,11 +70,10 @@ def lambda_handler(event, context):
 def check_policy_deleted(event):
     """Check for S3 Bucket Policy Deletion.  Trigger violation if True."""
     try:
-      if "DeleteBucketPolicy" in event["detail"]["eventName"]:
+        if "DeleteBucketPolicy" not in event["detail"]["eventName"]:
+            return False
         print("Policy Deleted! No encryption")
         return True
-      else:
-        return False
     except KeyError as err:
         print(err)
         return False
@@ -88,13 +87,12 @@ def check_policy_for_encryption(event):
     """
     try:
         for statement in event["detail"]["requestParameters"]["bucketPolicy"]["Statement"]:
-            if statement["Condition"]["StringNotEquals"]["s3:x-amz-server-side-encryption"] == \
-            "aws:kms" or statement["Condition"]["StringNotEquals"]\
-            ["s3:x-amz-server-side-encryption"] == "AES256":
-                print("S3 Bucket Policy uses SSE")
-                return False
-            else:
+            if statement["Condition"]["StringNotEquals"][
+                "s3:x-amz-server-side-encryption"
+            ] not in ["aws:kms", "AES256"]:
                 return True
+            print("S3 Bucket Policy uses SSE")
+            return False
     except KeyError as err:
         print(err)
         return True
@@ -108,9 +106,7 @@ def create_non_compliance_message(event, policy_check_result):
     This is based upon whether or not the specific violation triggered a "Violation" variable
     Then it adds general information regarding the violation
     """
-    message = ""
-    for violation in policy_check_result:
-        message += violation+"\n"
+    message = "".join(violation+"\n" for violation in policy_check_result)
     message += "S3 Bucket: " + \
         event["detail"]['requestParameters']['bucketName'] + "\n\n"
     return message

@@ -55,22 +55,17 @@ def lambda_handler(event, context):
         print(err)
         return False
 
-    tag_list = []
-    for tag in vault_data["Tags"]:
-        tag_list.append(tag)
-
-    missing_tag_list = []
-    for tag in REQUIRED_KEYS:
-        if tag not in tag_list:
-            missing_tag_list.append(tag)
-
-    if missing_tag_list:
-        subject = "Violation - Glacier Vault is missing tags!"
-        message = create_non_compliance_message(
-            missing_tag_list, vault, event, context)
-        send_violation(OUTBOUND_TOPIC_ARN, message, subject)
-    else:
+    tag_list = list(vault_data["Tags"])
+    if not (
+        missing_tag_list := [
+            tag for tag in REQUIRED_KEYS if tag not in tag_list
+        ]
+    ):
         return None
+    message = create_non_compliance_message(
+        missing_tag_list, vault, event, context)
+    subject = "Violation - Glacier Vault is missing tags!"
+    send_violation(OUTBOUND_TOPIC_ARN, message, subject)
 
 
 def send_violation(OUTBOUND_TOPIC_ARN, message, subject):
@@ -101,8 +96,8 @@ def create_non_compliance_message(missing_tag_list, vault, event, context):
     """
     missing_tags = ', '.join(missing_tag_list)
     message = "Violation - Glacier Vault is missing required tags!  \n\n"
-    message += 'Glacier Vault: ' + vault + '\n'
-    message += 'Missing Tag(s): ' + missing_tags + '\n'
+    message += f'Glacier Vault: {vault}' + '\n'
+    message += f'Missing Tag(s): {missing_tags}' + '\n'
     message += 'Account: ' + event["account"] + "\n"
     message += "Region: " + event["detail"]["awsRegion"] + "\n"
     message += "\n\n"
@@ -133,4 +128,6 @@ def setup_logging():
         log.setLevel(log_levels['ERROR'])
         log.warning('The logging_level environment variable is not set. The log level is set to \
                     ERROR')
-    log.info('Logging setup complete - set to log level ' + str(log.getEffectiveLevel()))
+    log.info(
+        f'Logging setup complete - set to log level {str(log.getEffectiveLevel())}'
+    )

@@ -32,10 +32,7 @@ OUTBOUND_TOPIC_ARN = os.environ["outbound_topic_arn"]
 def lambda_handler(event, context):
     setup_logging()
     log.info(json.dumps(event))
-    invalid_config = check_config(event, context)
-
-    # If invalid, the SNS notification is sent.
-    if invalid_config:
+    if invalid_config := check_config(event, context):
         subject = "Violation - Auto Scaling Launch Config missing IAM Instance Profile!"
         message = create_non_compliance_message(invalid_config, event, context)
         send_violation(OUTBOUND_TOPIC_ARN, message, subject)
@@ -57,7 +54,10 @@ def check_config(event, context):
     # Check if the IamInstanceProfile string is included in the JSON response. If it isn't, the launch config name is passed into the invalid_config list.
     for response in describe_config["LaunchConfigurations"]:
         if "IamInstanceProfile" in response:
-            log.info("Launch Configuration: " + launch_config_name + " Contains IAM Instance Profile")
+            log.info(
+                f"Launch Configuration: {launch_config_name} Contains IAM Instance Profile"
+            )
+
         else:
             invalid_config.append(response["LaunchConfigurationName"])
         return invalid_config
@@ -110,4 +110,6 @@ def setup_logging():
         log.setLevel(log_levels['ERROR'])
         log.warning('The logging_level environment variable is not set. The log level is set to \
                     ERROR')
-    log.info('Logging setup complete - set to log level ' + str(log.getEffectiveLevel()))
+    log.info(
+        f'Logging setup complete - set to log level {str(log.getEffectiveLevel())}'
+    )

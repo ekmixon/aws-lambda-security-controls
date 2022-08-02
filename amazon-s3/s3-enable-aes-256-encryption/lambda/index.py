@@ -71,4 +71,6 @@ def setup_logging():
                         ERROR.  The log level is set to ERROR")
     else:
         log.setLevel(log_levels['ERROR'])
-    log.info('Logging setup complete - set to log level ' + str(log.getEffectiveLevel()))
+    log.info(
+        f'Logging setup complete - set to log level {str(log.getEffectiveLevel())}'
+    )

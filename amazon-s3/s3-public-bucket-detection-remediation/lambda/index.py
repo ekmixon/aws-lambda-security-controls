@@ -72,7 +72,10 @@ def evaluate_control(bucket_name, event):
         log.info("Describing the current ACL")
         bucket_acl = S3_RESOURCE.BucketAcl(bucket_name)
     except Exception as err:
-        s3_violations.append('Unable to describe the bucket ACL.  Error was: ' + err + ' Manual followup recommended')
+        s3_violations.append(
+            f'Unable to describe the bucket ACL.  Error was: {err} Manual followup recommended'
+        )
+
         log.info(s3_violations)
         # Since we can't react to this event without a bucket name provided
         # We return false to notify stakeholders to intervene
@@ -82,7 +85,7 @@ def evaluate_control(bucket_name, event):
     preserve_log_delivery = []
     for grant in bucket_acl.grants:
         if "URI" in grant['Grantee']:
-            log.info("Found Grant: "+str(grant))
+            log.info(f"Found Grant: {str(grant)}")
             uri_list += grant['Grantee']["URI"]
             if "LogDelivery" in str(grant):
                 preserve_log_delivery.append(grant)
@@ -97,9 +100,8 @@ def evaluate_control(bucket_name, event):
             if preserve_log_delivery:
                 s3_violations.append("ACL was greater than Private, but contained LogDelivery.  Resetting ACL to LogDelivery")
                 owner = bucket_acl.owner
-                print("Preserve was: " + str(preserve_log_delivery))
-                acl_string = {}
-                acl_string['Grants'] = []
+                print(f"Preserve was: {str(preserve_log_delivery)}")
+                acl_string = {'Grants': []}
                 for grant in preserve_log_delivery:
                     acl_string['Grants'].append(grant)
                 acl_string['Owner'] = owner
@@ -108,36 +110,59 @@ def evaluate_control(bucket_name, event):
                 response = bucket_acl.put(AccessControlPolicy=acl_string)
                 print(response)
                 if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-                     log.info(response)
-                     s3_violations.append("--AUTOMATIC INTERVENTION SUCCESSFUL--")
-                     s3_violations.append("Bucket ACL has been reverted to only contain LogDelivery automatically")
+                    log.info(response)
+                    s3_violations.extend(
+                        (
+                            "--AUTOMATIC INTERVENTION SUCCESSFUL--",
+                            "Bucket ACL has been reverted to only contain LogDelivery automatically",
+                        )
+                    )
+
                 else:
-                    s3_violations.append("--AUTOMATIC INTERVENTION FAILED--")
-                    s3_violations.append('PutBucketACL replied with something other than "200 OK". Manual followup recommended')
+                    s3_violations.extend(
+                        (
+                            "--AUTOMATIC INTERVENTION FAILED--",
+                            'PutBucketACL replied with something other than "200 OK". Manual followup recommended',
+                        )
+                    )
+
             else:
                 s3_violations.append("ACL was greater than Private, and does not contain LogDelivery.  Resetting ACL to Private")
                 # Correct the ACL
                 response = bucket_acl.put(ACL='private')
                 if response['ResponseMetadata']['HTTPStatusCode'] == 200:
                     log.info(response)
-                    s3_violations.append("--AUTOMATIC INTERVENTION SUCCESSFUL--")
-                    s3_violations.append("Bucket ACL has been changed to Private automatically")
+                    s3_violations.extend(
+                        (
+                            "--AUTOMATIC INTERVENTION SUCCESSFUL--",
+                            "Bucket ACL has been changed to Private automatically",
+                        )
+                    )
+
                 else:
-                    s3_violations.append("--AUTOMATIC INTERVENTION FAILED--")
-                    s3_violations.append('PutBucketACL replied with something other than "200". Manual followup recommended')
+                    s3_violations.extend(
+                        (
+                            "--AUTOMATIC INTERVENTION FAILED--",
+                            'PutBucketACL replied with something other than "200". Manual followup recommended',
+                        )
+                    )
+
             log.info(str(s3_violations))
             return False, s3_violations
 
         except Exception as err:
-            s3_violations.append('Unable resolve violation automatically.  Error was: ' + str(err) + ' Manual followup recommended')
+            s3_violations.append(
+                f'Unable resolve violation automatically.  Error was: {str(err)} Manual followup recommended'
+            )
+
             log.info(s3_violations)
             # Since we can't resolve this event, 
             # we return false to notify stakeholders to intervene
             return False, s3_violations
 
     else:
-       log.info("ACL is not in violation")
-       return True, s3_violations
+        log.info("ACL is not in violation")
+        return True, s3_violations
 
 def invoke_alert(event, context, s3_violations):
     """Invoke Alerts and Actions."""
@@ -160,8 +185,7 @@ def send_violation(event, context, subject, message):
     snsregion = findsnsregion[3]
     sendclient = boto3.client('sns', region_name=snsregion)
     try:
-        body = ""
-        body += "Security event encountered when entity:\n"
+        body = "" + "Security event encountered when entity:\n"
         body += json.dumps(event["detail"]["userIdentity"], indent=4)
         body += "\nIssued API call:\n\t"+event["detail"]["eventName"]+"\n\n"
         body += "Full ACL Request Details:\n"
